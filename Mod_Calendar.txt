@@ -1,0 +1,163 @@
+' '' ''' ''''''''''''''''''''''''''''''''''''''''''''''''''''' ''' '' '
+' '' ''' ' If any issues, please contact vessartrk@gmail.com ' ''' '' '
+' '' ''' ''''''''''''''''''''''''''''''''''''''''''''''''''''' ''' '' '
+' '' ''' '           Created By Michael Vessa 2026           ' ''' '' '
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+Sub PopulateMHECalendar()
+' This subroutine refresh the calendar items
+
+Dim wsLog As Worksheet
+Dim wsCal As Worksheet
+Dim calCell As Range
+Dim lastRow As Long
+Dim i As Long, x As Long
+Dim head_dates As Variant, details As Variant
+Dim row5 As Variant, row8 As Variant
+Dim targetCell As Range
+Dim colBol As Boolean, first_cal_date As Boolean, shp_stop As Boolean
+Dim selmonth As Long
+
+Dim ws As Shape
+Dim currRow As Integer, currCol As Integer
+
+Dim selYear As Long
+Dim startmonth As Date, endmonth As Date
+Dim start_date As Date, end_date As Date, loop_date As Date, start_end_date As Date
+
+Dim headerText As String
+Dim traineeName1 As String, traineeName2 As String, traineeName3 As String
+Dim starttime As String
+Dim coursetype As String
+Dim ItemID As Integer
+
+first_cal_date = False
+colBol = False
+Sheet4.Range("B2").Value = ""
+Call deleteallshapes
+
+Set wsLog = ThisWorkbook.Sheets("Training_Log")
+Set wsCal = ThisWorkbook.Sheets("Calendar")
+selYear = wsCal.Range("B2").Value
+
+If IsNumeric(wsCal.Range("C2").Value) Then
+    selmonth = wsCal.Range("C2").Value
+Else
+    selmonth = Month(DateValue("1 " & wsCal.Range("C2").Value & " " & selYear))
+End If
+
+startmonth = wsCal.Range("B4").Value
+endmonth = wsCal.Range("H14").Value
+
+'below storing original input
+head_dates = wsCal.Range("B1:E2").Value
+details = wsCal.Range("J1:P3").Value
+
+For i = 5 To 15 Step 2
+    Sheet5.Range(Sheet5.Cells(i, 2), Sheet5.Cells(i, 8)).ClearContents
+Next i
+
+For i = 5 To 20 Step 2
+    Sheet5.Range(Sheet5.Cells(i, 10), Sheet5.Cells(i, 16)).ClearContents
+Next i
+
+Sheet5.Range("J7").Value = "Updated on:"
+' placing original input back again
+wsCal.Range("B1:E2").Value = head_dates
+wsCal.Range("J1:P3").Value = details
+wsCal.Range("C2").Formula = "=MATCH(UPPER($C$1),{""JANUARY"",""FEBRUARY"",""MARCH"",""APRIL"",""MAY"",""JUNE"",""JULY"",""AUGUST"",""SEPTEMBER"",""OCTOBER"",""NOVEMBER"",""DECEMBER""},0)"
+lastRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).Row
+
+' Loop through training log
+For i = 3 To lastRow
+shp_stop = False
+    first_cal_date = False
+    ' Training log sheet loop
+    start_date = wsLog.Cells(i, "E").Value
+    end_date = wsLog.Cells(i, "F").Value
+   For start_end_date = start_date To end_date
+   
+        If first_cal_date = True Then
+            GoTo skiptonext_i
+        End If
+        
+        If start_end_date >= startmonth Or start_end_date <= endmonth Then
+            traineeName1 = wsLog.Cells(i, "H").Value
+            traineeName2 = wsLog.Cells(i, "I").Value
+            traineeName3 = wsLog.Cells(i, "J").Value
+            ItemID = wsLog.Cells(i, "A").Value
+            starttime = Format(wsLog.Cells(i, "G").Value, "h:mm")
+            coursetype = wsLog.Cells(i, "B").Value
+            ' Find matching calendar date cell
+            For Each calCell In wsCal.UsedRange
+                ' checking if its a cell with a date
+                If IsDate(calCell.Value) Then
+                ' checking if booked item date is matching with calendar date
+                    If DateValue(calCell.Value) = DateValue(start_end_date) Then
+                        currCol = calCell.Column
+                        currRow = calCell.Row
+                        If shp_stop = False Then
+                            wsCal.Shapes("Button_Detail").Duplicate.Name = "Button_Item" & ItemID
+                            With wsCal.Shapes("Button_Item" & ItemID)
+                                .Left = wsCal.Cells(currRow, currCol).Left 'Set Left Pos.
+                                .Top = wsCal.Cells(currRow, currCol).Top
+                            End With
+                            shp_stop = True
+                        End If
+                        
+                        For loop_date = start_end_date To end_date
+                            If currCol = 9 Then
+                                currCol = 2
+                                currRow = currRow + 2
+                                colBol = True
+                            End If
+                            If currRow = 16 And currCol = 2 Then
+                                GoTo skiptonext_i
+                            End If
+                            Set targetCell = Sheet5.Cells(currRow + 1, currCol)
+                            targetCell = starttime & " / " & coursetype & vbLf & _
+                            traineeName1 & vbLf & traineeName2 & vbLf & traineeName3
+                            currCol = currCol + 1
+                            If colBol = True Then
+                                colBol = False
+                            End If
+                        Next loop_date
+skiploop:
+                        Exit For
+                    End If
+                End If
+            Next calCell
+        End If
+    Next start_end_date
+skiptonext_i:
+Next i
+End Sub
+Sub deleteallshapes()
+Dim ws As Worksheet
+Dim i As Integer
+Dim shp As Shape
+
+    Set wsCal = ThisWorkbook.Sheets("Calendar")
+    
+    For i = wsCal.Shapes.Count To 1 Step -1
+        Set shp = wsCal.Shapes(i)
+        If InStr(shp.Name, "Button_Item") > 0 Then
+            shp.Delete
+        End If
+    Next i
+
+Call DeleteHiddenShapes
+End Sub
+
+Sub DeleteHiddenShapes()
+' This functions makes sure that all hidden shapes are deleted
+    Dim shp As Shape
+    Dim ws As Worksheet
+    
+    Set wsCal = ThisWorkbook.Sheets("Calendar")
+    
+    For Each shp In wsCal.Shapes
+        ' Delete shapes that are hidden (Visible = msoFalse)
+        If shp.Visible = msoFalse Then shp.Delete
+    Next shp
+End Sub
+

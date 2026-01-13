@@ -1,0 +1,419 @@
+' '' ''' ''''''''''''''''''''''''''''''''''''''''''''''''''''' ''' '' '
+' '' ''' ' If any issues, please contact vessartrk@gmail.com ' ''' '' '
+' '' ''' ''''''''''''''''''''''''''''''''''''''''''''''''''''' ''' '' '
+' '' ''' '           Created By Michael Vessa 2026           ' ''' '' '
+'''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+
+Option Explicit
+
+Dim similarity_check As Boolean
+
+Sub Save_MHE_Training()
+
+Dim wsDash As Worksheet
+Dim wsLog As Worksheet
+Dim nextRow As Long, lastRow As Long
+Dim i As Integer
+Dim start_date As Date, end_date As Date, loop_date As Date
+Dim start_date_data As Date, end_date_data As Date, loop_date_data As Date
+Dim terminateBol As Boolean
+
+If MsgBox("Are you sure you want to BOOK IN?", vbYesNo, "Delete Item") = vbNo Then Exit Sub
+
+Set wsDash = ThisWorkbook.Sheets("Dashboard")
+Set wsLog = ThisWorkbook.Sheets("Training_Log")
+
+If WorksheetFunction.CountBlank(wsDash.Range("C5:C6")) > 0 _
+   Or WorksheetFunction.CountBlank(wsDash.Range("C8:C10")) > 0 _
+   Or wsDash.Range("E2").Value = "" Then
+    MsgBox "Letters in BOLDS are mandatory fields!"
+    Exit Sub
+End If
+    
+If wsDash.Range("C9").Value - wsDash.Range("C8").Value > 7 Then
+    MsgBox ("Cannot book for more than 7 days!")
+    Exit Sub
+End If
+
+If wsDash.Range("C8").Value > wsDash.Range("C9").Value Then
+    MsgBox ("Did you meant to switch start date with end date?")
+    Exit Sub
+End If
+
+lastRow = Sheet2.Cells(Rows.Count, 1).End(xlUp).Row
+terminateBol = False
+
+For i = 3 To lastRow
+    start_date = wsDash.Range("C8").Value
+    end_date = wsDash.Range("C9").Value
+    For loop_date = start_date To end_date
+        start_date_data = Sheet2.Cells(i, 5).Value
+        end_date_data = Sheet2.Cells(i, 6).Value
+        For loop_date_data = start_date_data To end_date_data
+            If loop_date = loop_date_data Then
+                MsgBox ("Slot for date " & loop_date_data & " has already been taken")
+                terminateBol = True
+            End If
+        Next loop_date_data
+    Next loop_date
+Next i
+
+If terminateBol <> True Then
+
+    nextRow = wsLog.Cells(wsLog.Rows.Count, "A").End(xlUp).Row + 1
+    wsLog.Cells(nextRow, 1).Value = nextRow - 2
+    wsLog.Cells(nextRow, 2).Value = wsDash.Range("C5").Value ' Course Type
+    wsLog.Cells(nextRow, 3).Value = wsDash.Range("C6").Value ' Truck Type
+    wsLog.Cells(nextRow, 4).Value = wsDash.Range("C7").Value ' Trainer
+    wsLog.Cells(nextRow, 5).Value = wsDash.Range("C8").Value '  Start Date
+    wsLog.Cells(nextRow, 6).Value = wsDash.Range("C9").Value ' End Date
+    wsLog.Cells(nextRow, 7).Value = wsDash.Range("C10").Value ' Start Time
+    wsLog.Cells(nextRow, 8).Value = wsDash.Range("E2").Value ' Trainee Name 1
+    wsLog.Cells(nextRow, 9).Value = wsDash.Range("G2").Value ' Trainee Name 2
+    wsLog.Cells(nextRow, 10).Value = wsDash.Range("I2").Value ' Trainee Name 3
+    wsLog.Cells(nextRow, 11).Value = Date
+    wsLog.Cells(nextRow, 12).Value = wsDash.Range("E3").Value ' Theory Result 1
+    wsLog.Cells(nextRow, 13).Value = wsDash.Range("E4").Value
+    wsLog.Cells(nextRow, 14).Value = wsDash.Range("E5").Value
+    wsLog.Cells(nextRow, 15).Value = wsDash.Range("E6").Value
+    wsLog.Cells(nextRow, 16).Value = wsDash.Range("E7").Value
+    wsLog.Cells(nextRow, 17).Value = wsDash.Range("E8").Value
+    wsLog.Cells(nextRow, 18).Value = wsDash.Range("E9").Value
+    wsLog.Cells(nextRow, 19).Value = wsDash.Range("E10").Value ' Department 1
+    wsLog.Cells(nextRow, 20).Value = wsDash.Range("G3").Value ' Theory Result 2
+    wsLog.Cells(nextRow, 21).Value = wsDash.Range("G4").Value
+    wsLog.Cells(nextRow, 22).Value = wsDash.Range("G5").Value
+    wsLog.Cells(nextRow, 23).Value = wsDash.Range("G6").Value
+    wsLog.Cells(nextRow, 24).Value = wsDash.Range("G7").Value
+    wsLog.Cells(nextRow, 25).Value = wsDash.Range("G8").Value
+    wsLog.Cells(nextRow, 26).Value = wsDash.Range("G9").Value
+    wsLog.Cells(nextRow, 27).Value = wsDash.Range("G10").Value ' Department 2
+    wsLog.Cells(nextRow, 28).Value = wsDash.Range("I3").Value
+    wsLog.Cells(nextRow, 29).Value = wsDash.Range("I4").Value
+    wsLog.Cells(nextRow, 30).Value = wsDash.Range("I5").Value
+    wsLog.Cells(nextRow, 31).Value = wsDash.Range("I6").Value
+    wsLog.Cells(nextRow, 32).Value = wsDash.Range("I7").Value
+    wsLog.Cells(nextRow, 33).Value = wsDash.Range("I8").Value
+    wsLog.Cells(nextRow, 34).Value = wsDash.Range("I9").Value
+    wsLog.Cells(nextRow, 35).Value = wsDash.Range("I10").Value
+    
+    MsgBox ("Training saved to Training Log")
+    
+    wsDash.Range("C5:C10").ClearContents
+    wsDash.Range("E2:E10").ClearContents
+    wsDash.Range("G2:G10").ClearContents
+    wsDash.Range("I2:I10").ClearContents
+End If
+    Call PopulateMHECalendar
+End Sub
+
+Sub Calendar_Item_Select()
+
+Dim ItemID As String, ItemRow As Integer, ItemCol As Integer
+
+    Dim wsDash As Worksheet
+    Dim wsLog As Worksheet
+    
+    Set wsDash = ThisWorkbook.Sheets("Calendar")
+    Set wsLog = ThisWorkbook.Sheets("Training_Log")
+    
+With Sheet5
+
+    ItemID = Replace(Application.Caller, Left(Application.Caller, 11), "") 'Extract Item ID
+    ItemRow = ItemID + 2
+    Sheet4.Range("B2").Value = ItemRow
+
+    For ItemCol = 1 To 7
+            .Cells(5, (9 + ItemCol)).Value = Sheet2.Cells(ItemRow, ItemCol).Value 'Bring Over data
+    Next ItemCol
+    
+        ' ribbon detail
+    wsDash.Range("K5").Value = wsLog.Cells(ItemRow, 2).Value
+    wsDash.Range("L5").Value = wsLog.Cells(ItemRow, 3).Value
+    wsDash.Range("M5").Value = wsLog.Cells(ItemRow, 4).Value
+    wsDash.Range("N5").Value = wsLog.Cells(ItemRow, 5).Value
+    wsDash.Range("O5").Value = wsLog.Cells(ItemRow, 6).Value
+    wsDash.Range("P5").Value = wsLog.Cells(ItemRow, 7).Value
+    
+    wsDash.Range("K7").Value = wsLog.Cells(ItemRow, 8).Value ' Trainee 1
+    wsDash.Range("M7").Value = wsLog.Cells(ItemRow, 9).Value ' Trainee 2
+    wsDash.Range("O7").Value = wsLog.Cells(ItemRow, 10).Value ' Trainee 3
+    
+    wsDash.Range("L7").Value = wsLog.Cells(ItemRow, 19).Value ' Trainee 1 department
+    wsDash.Range("N7").Value = wsLog.Cells(ItemRow, 27).Value ' Trainee 2 department
+    wsDash.Range("P7").Value = wsLog.Cells(ItemRow, 35).Value ' Trainee 3 department
+    
+    wsDash.Range("J9").Value = wsLog.Cells(ItemRow, 11).Value
+    
+    ' Trainee Name 1
+    wsDash.Range("K9").Value = wsLog.Cells(ItemRow, 12).Value ' Theory Result
+    wsDash.Range("L9").Value = wsLog.Cells(ItemRow, 13).Value ' Theory %
+    
+    wsDash.Range("K11").Value = wsLog.Cells(ItemRow, 14).Value ' Practical Result
+    wsDash.Range("L11").Value = wsLog.Cells(ItemRow, 15).Value ' Practical %
+    
+    wsDash.Range("K13").Value = wsLog.Cells(ItemRow, 16).Value ' Pre-op Result %
+    wsDash.Range("L13").Value = wsLog.Cells(ItemRow, 17).Value ' Attempts
+    
+    wsDash.Range("K15").Value = wsLog.Cells(ItemRow, 18).Value ' Certificate number
+    
+    ' Trainee Name 2
+    wsDash.Range("M9").Value = wsLog.Cells(ItemRow, 20).Value ' Theory Result
+    wsDash.Range("N9").Value = wsLog.Cells(ItemRow, 21).Value ' Theory %
+    
+    wsDash.Range("M11").Value = wsLog.Cells(ItemRow, 22).Value ' Practical Result
+    wsDash.Range("N11").Value = wsLog.Cells(ItemRow, 23).Value ' Practical %
+    
+    wsDash.Range("M13").Value = wsLog.Cells(ItemRow, 24).Value ' Pre-op Result %
+    wsDash.Range("N13").Value = wsLog.Cells(ItemRow, 25).Value ' Attempts
+    
+    wsDash.Range("M15").Value = wsLog.Cells(ItemRow, 26).Value ' Certificate number
+    
+    ' Trainee Name 3
+    wsDash.Range("O9").Value = wsLog.Cells(ItemRow, 28).Value ' Theory Result
+    wsDash.Range("P9").Value = wsLog.Cells(ItemRow, 29).Value ' Theory %
+    
+    wsDash.Range("O11").Value = wsLog.Cells(ItemRow, 30).Value ' Practical Result
+    wsDash.Range("P11").Value = wsLog.Cells(ItemRow, 31).Value ' Practical %
+    
+    wsDash.Range("O13").Value = wsLog.Cells(ItemRow, 32).Value ' Pre-op Result %
+    wsDash.Range("P13").Value = wsLog.Cells(ItemRow, 33).Value ' Attempts
+    
+    wsDash.Range("O15").Value = wsLog.Cells(ItemRow, 34).Value ' Certificate number
+
+End With
+
+End Sub
+
+Sub Update_detail()
+
+    Dim wsDash As Worksheet
+    Dim wsLog As Worksheet
+    Dim nextRow As Long, lastRow As Long, currRow As Long
+    Dim i As Integer, ItemRow As Integer
+    Dim start_date As Date, end_date As Date, loop_date As Long
+    Dim start_date_data As Date, end_date_data As Date, loop_date_data As Date
+    Dim terminateBol As Boolean
+    Dim storedates As Variant
+    
+    Set wsDash = ThisWorkbook.Sheets("Calendar")
+    Set wsLog = ThisWorkbook.Sheets("Training_Log")
+
+    If WorksheetFunction.CountBlank(wsDash.Range("K5:L5")) > 0 _
+       Or WorksheetFunction.CountBlank(wsDash.Range("N5:P5")) > 0 _
+       Or wsDash.Range("K7").Value = "" Then
+        MsgBox "Letters in BOLDS are mandatory fields!"
+        Exit Sub
+    End If
+    
+    If wsDash.Range("N5").Value - wsDash.Range("O5").Value > 7 Then
+        MsgBox ("Cannot book for more than 7 days!")
+        Exit Sub
+    End If
+    
+    If wsDash.Range("N5").Value > wsDash.Range("O5").Value Then
+        MsgBox ("Did you meant to switch start date with end date?")
+        Exit Sub
+    End If
+    
+    ItemRow = Sheet4.Range("B2").Value
+    If ItemRow = Empty Then
+        MsgBox ("No item has been selected. Action has been cancelled")
+        Exit Sub
+    End If
+    
+    If wsDash.Range("N5").Value > wsDash.Range("O5").Value Then
+        MsgBox ("Did you meant to switch start date with end date?")
+        Exit Sub
+    End If
+    
+    currRow = Sheet4.Range("B2").Value
+    storedates = wsLog.Range(wsLog.Cells(currRow, 5), wsLog.Cells(currRow, 6)).Value
+    wsLog.Range("E" & currRow & ":F" & currRow).ClearContents
+    lastRow = Sheet2.Cells(Rows.Count, 1).End(xlUp).Row
+    terminateBol = False
+    start_date = wsDash.Range("N5").Value
+    end_date = wsDash.Range("O5").Value
+    
+    For i = 3 To lastRow
+        For loop_date = start_date To end_date
+            start_date_data = Sheet2.Cells(i, 5).Value
+            end_date_data = Sheet2.Cells(i, 6).Value
+            For loop_date_data = start_date_data To end_date_data
+                If loop_date = loop_date_data Then
+                    MsgBox ("Slot for date " & loop_date_data & " has already been taken")
+                    terminateBol = True
+                End If
+            Next loop_date_data
+        Next loop_date
+    Next i
+    
+    If terminateBol = False Then
+        If MsgBox("Are you sure you want to rewrite original", vbYesNo, "Delete Item") = vbNo Then
+            wsLog.Range(wsLog.Cells(currRow, 5), wsLog.Cells(currRow, 6)).Value = storedates
+            Exit Sub
+        End If
+        ' ribbon detail
+        wsLog.Cells(ItemRow, 2).Value = wsDash.Range("K5").Value
+        wsLog.Cells(ItemRow, 3).Value = wsDash.Range("L5").Value
+        wsLog.Cells(ItemRow, 4).Value = wsDash.Range("M5").Value
+        wsLog.Cells(ItemRow, 5).Value = wsDash.Range("N5").Value
+        wsLog.Cells(ItemRow, 6).Value = wsDash.Range("O5").Value
+        wsLog.Cells(ItemRow, 7).Value = wsDash.Range("P5").Value
+        
+        wsLog.Cells(ItemRow, 8).Value = wsDash.Range("K7").Value ' Trainee 1
+        wsLog.Cells(ItemRow, 9).Value = wsDash.Range("M7").Value ' Trainee 2
+        wsLog.Cells(ItemRow, 10).Value = wsDash.Range("O7").Value ' Trainee 3
+        
+        wsLog.Cells(ItemRow, 19).Value = wsDash.Range("L7").Value ' Trainee 1 department
+        wsLog.Cells(ItemRow, 27).Value = wsDash.Range("N7").Value ' Trainee 2 department
+        wsLog.Cells(ItemRow, 35).Value = wsDash.Range("P7").Value ' Trainee 3 department
+        
+        wsLog.Cells(ItemRow, 11).Value = Date
+        
+        ' Trainee Name 1
+        wsLog.Cells(ItemRow, 12).Value = wsDash.Range("K9").Value ' Theory Result
+        wsLog.Cells(ItemRow, 13).Value = wsDash.Range("L9").Value ' Theory %
+        
+        wsLog.Cells(ItemRow, 14).Value = wsDash.Range("K11").Value ' Practical Result
+        wsLog.Cells(ItemRow, 15).Value = wsDash.Range("L11").Value ' Practical %
+        
+        wsLog.Cells(ItemRow, 16).Value = wsDash.Range("K13").Value ' Pre-op Result %
+        wsLog.Cells(ItemRow, 17).Value = wsDash.Range("L13").Value ' Attempts
+        
+        wsLog.Cells(ItemRow, 18).Value = wsDash.Range("K15").Value ' Certificate number
+        
+        ' Trainee Name 2
+        wsLog.Cells(ItemRow, 20).Value = wsDash.Range("M9").Value ' Theory Result
+        wsLog.Cells(ItemRow, 21).Value = wsDash.Range("N9").Value ' Theory %
+        
+        wsLog.Cells(ItemRow, 22).Value = wsDash.Range("M11").Value ' Practical Result
+        wsLog.Cells(ItemRow, 23).Value = wsDash.Range("N11").Value ' Practical %
+        
+        wsLog.Cells(ItemRow, 24).Value = wsDash.Range("M13").Value ' Pre-op Result %
+        wsLog.Cells(ItemRow, 25).Value = wsDash.Range("N13").Value ' Attempts
+        
+        wsLog.Cells(ItemRow, 26).Value = wsDash.Range("M15").Value ' Certificate number
+        
+        ' Trainee Name 3
+        wsLog.Cells(ItemRow, 28).Value = wsDash.Range("O9").Value ' Theory Result
+        wsLog.Cells(ItemRow, 29).Value = wsDash.Range("P9").Value ' Theory %
+        
+        wsLog.Cells(ItemRow, 30).Value = wsDash.Range("O11").Value ' Practical Result
+        wsLog.Cells(ItemRow, 31).Value = wsDash.Range("P11").Value ' Practical %
+        
+        wsLog.Cells(ItemRow, 32).Value = wsDash.Range("O13").Value ' Pre-op Result %
+        wsLog.Cells(ItemRow, 33).Value = wsDash.Range("P13").Value ' Attempts
+        
+        wsLog.Cells(ItemRow, 34).Value = wsDash.Range("O15").Value ' Certificate number
+        Sheet4.Range("B2").Value = ""
+                
+        MsgBox ("Item has been updated")
+                
+        For i = 5 To 20 Step 2
+            Sheet5.Range(Sheet5.Cells(i, 10), Sheet5.Cells(i, 16)).ClearContents
+        Next i
+        Sheet5.Range("J7").Value = "UPDATED!"
+        Call PopulateMHECalendar
+    Else
+        wsLog.Range(wsDash.Cells(currRow, 5), wsLog.Cells(currRow, 6)).Value = storedates
+    End If
+    
+End Sub
+
+Sub add_new_trainee()
+
+Dim nextRow As Long
+Dim new_input1 As String
+
+If Sheet1.Range("C3").Value = "" Then
+    MsgBox ("Input for name is empty: cell C3")
+    Exit Sub
+End If
+
+Call Check_Similarity
+
+If similarity_check = False Then
+    If Sheet1.Range("C3").Value = "" Then
+        MsgBox ("Input for name is empty: cell C3")
+        Exit Sub
+    End If
+    
+    new_input1 = Sheet1.Range("C3").Value
+    nextRow = Sheet4.Cells(Rows.Count, 9).End(xlUp).Row + 1
+    
+    Sheet4.Cells(nextRow, 9).Value = new_input1
+    MsgBox ("User added into list. Sheet Settings")
+    Sheet1.Range("C3").Value = ""
+End If
+
+End Sub
+
+Sub Check_Similarity()
+' This subroutine is checking if similar name is not already in the list
+
+Dim lastRow As Long, i As Long, l As Long, space_count As Long
+Dim new_input As String, list_name As String
+Dim minLen As Integer, x As Integer, minLen2 As Integer, minLenVar As Integer, minLenCal As Integer, y As Integer
+Dim a As Long, b As Long
+
+similarity_check = False
+new_input = Sheet1.Range("C3").Value
+lastRow = Sheet4.Cells(Rows.Count, 9).End(xlUp).Row
+
+For i = 2 To lastRow
+    list_name = Sheet4.Cells(i, 9).Value
+    minLen = Len(new_input)
+    
+    minLen = Application.WorksheetFunction.Min(Len(list_name), Len(new_input))
+
+    x = 0
+    y = 0
+    space_count = 0
+    
+    For l = 1 To minLen
+'        Debug.Print Mid(list_name, l, 1) & " - " & Mid(new_input, l, 1)
+        ' Check if letters are different
+        If Mid(list_name, l, 1) <> Mid(new_input, l, 1) Then
+            x = x + 1
+            If Mid(new_input, l, 1) = " " Then
+                space_count = space_count + 1
+            End If
+        
+        End If
+    Next l
+    
+    If space_count >= 2 Then
+        MsgBox new_input & " got more than 1x extra space: ", vbCritical, "Check Similarity"
+        similarity_check = True
+        Exit Sub
+    End If
+    
+    If x < 4 Then
+        MsgBox new_input & " is similar to: " & list_name, vbCritical, "Check Similarity"
+        similarity_check = True
+        Exit Sub
+    End If
+Next i
+
+End Sub
+
+Sub Delete_Item()
+' Does not actualy delete item. Just delete dates, so it won't refresh in the calendar
+
+Dim currRow As Long, i As Long
+
+currRow = Sheet4.Range("B2").Value
+
+If MsgBox("Are you sure you want to delete this item?", vbYesNo, "Delete Item") = vbNo Then
+    Exit Sub
+End If
+With Sheet2
+    For i = 5 To 6
+        .Cells(currRow, i).Value = ""
+    Next i
+
+MsgBox "Item has been deleted", vbInformation, "SYSTEM"
+
+End With
+End Sub
